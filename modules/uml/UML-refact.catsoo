@@ -1,0 +1,40 @@
+assert __libs <> null, 'UML Library is missing, import it first (or re-import it)';
+
+"""
+**Add getter operation**
+
+@param att the property (attribute) from which the getter will be generated.
+@returns the created getter.
+"""
+def _uml_addGetter(att : Property) : Operation
+{
+    if (att.owner.ownedOperation->select(e | e.name = 'get' + first2up(att.name)) <> [] ) {
+       return null;
+    }
+    return att.owner _uml_cOperation('get' + first2up(att.name)) _uml_withReturnType(att.type, att.lower, att.upper);
+}
+
+"""
+**Add setter operation**
+
+@param att the property (attribute) from which the setter will be generated.
+@returns the created setter.
+"""
+def _uml_addSetter(att : Property) : Operation
+{
+    if (att.owner.ownedOperation->select(e | e.name = 'set' + first2up(att.name)) <> [] ) {
+       return null;
+    }
+    return att.owner _uml_cOperation('set' + first2up(att.name)) _uml_returnsVoid() _uml_addParameter(att.name, att.type, att.lower, att.upper);
+}
+
+"""
+**Add getter and setter operations**
+
+@param att the property (attribute) from which the getter/setter will be generated.
+@returns a collection containing the created getter and the created setter.
+"""
+def _uml_addGetterSetter(att : Property) : Collection
+{
+    return [att _uml_addGetter(), att _uml_addSetter()];
+}

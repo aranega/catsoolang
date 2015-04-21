@@ -1,0 +1,123 @@
+"""
+**Creates many classes in one command (distributed following x axis from a (10,10) position)**
+
+@param parent the parent where the objects will be added.
+@param col the name collection
+@returns the collection of created classes widgets.
+"""
+def _uml_cManyClasses(parent : Object, col : Collection) : Collection
+{
+    if (parent = null) {
+       log('Parent cannot be null');
+       return [];
+    }
+    return col->_apply(parent _uml_cClass(self))->getOneWidget() distributeX();
+}
+
+
+"""
+**Finds an element from a root using its name**
+@param parent the root from wich the element must be search.
+@param n the element name.
+@returns the named element or null if not found.
+"""
+def _uml_fbyName(parent : Object, n : String) : Object
+{
+    if (parent = null) {
+       log('Parent cannot be null');
+       return null;
+    }
+    return parent allSubObjects()[NamedElement]->select(e | e.name = n)![NamedElement];
+}
+
+"""
+**Creates many classes in one command (distributed following x axis from a (10,10) position at model root)**
+
+@param s the names of class to create in one string. Each name is separated by ','.
+@returns the collection of created classes.
+
+_Example_:
+
+_uml_cList('First, Second, Class3, Class4');
+"""
+def _uml_cList(s : String) : Collection
+{
+    return __ROOT _uml_cManyClasses(s split(',')->trim()).modelElement;
+}
+
+"""
+**Creates a class tree hierarchie from a string**
+
+@param s the tree hierarchie where each class at the same level are separated by ',' inheritance is symbolized by '->'
+@returns the collection of created classes.
+
+_Example_:
+
+_uml_cTree('A, B -> C, D, E -> F -> G');
+"""
+def _uml_cTree(s : String) : Collection
+{
+    var els := s split('->')->trim()->_apply(self split(',')->trim());
+    var res := els->_apply(self->_apply(__ROOT _uml_fbyName(self) = null?__ROOT _uml_cClass(self):__ROOT _uml_fbyName(self)));
+    var i := res size()-1;
+    var starty := 10;
+    while (i > 0) {
+        var src := res at(i-1);
+        var dest := res at(i);
+        for (sclass : dest) {
+            src->_uml_inherits(sclass);
+        }
+	dest->getOneWidget()->_iter(self.y := starty) distributeX();
+        i := i - 1;
+	starty := starty + 150;
+	if (i = 0) {
+	   src->getOneWidget()->_iter(self.y := starty) distributeX();
+	}
+    }
+    return res;
+}
+
+"""
+**Joins all the element in a collection into a single string where each element is separated by another string**
+
+@param c the collection to join.
+@param s the collection separator.
+@returns a string.
+"""
+def listJoin(c : Collection, s : String) : String
+{
+    if (c = []) {
+       return '';
+    }
+    var last_item := null;
+    c->_apply(last_item := (last_item <> null ? last_item + s : '') + self);
+    return last_item;
+}
+
+
+def _uml_compositePattern(super : String, leafs : Collection, nested : Collection)
+{
+
+   var lclass := leafs->_apply(__ROOT _uml_cClass(self, 100, 300));
+   var nclass := nested->_apply(__ROOT _uml_cClass(self, 100, 300));
+
+   lclass += nclass;
+   var wids := lclass->getOneWidget() distributeX();
+   var sclass := __ROOT _uml_cClass(super, (wids at(0).x + wids at(wids size()-1).x) / 2, 100){isAbstract := true};
+   lclass->_uml_inherits(sclass);
+   nclass->_uml_cComposite(sclass);
+}
+
+
+def _uml_observerPattern(obsname : String, obsChilds : Collection)
+{
+    var str_pattern := obsChilds listJoin(', ') + ' -> ' + obsname;
+    var tree := _uml_cTree(str_pattern) flatten();
+    var obs := tree at(tree size()-1);
+    obs _uml_cOperation('notify') _uml_returnsVoid();
+    var subj := __ROOT _uml_cClass('Subject', obs getOneWidget().x + 300, obs getOneWidget().y);
+    _uml_cComposite(subj, obs);
+    subj _uml_cOperation('registerObserver') _uml_addParameter('obs', obs, 1, 1) _uml_returnsVoid();
+    subj _uml_cOperation('unregisterObserver') _uml_addParameter('obs', obs, 1, 1) _uml_returnsVoid();
+    subj _uml_cOperation('notifyObservers') _uml_returnsVoid();
+}

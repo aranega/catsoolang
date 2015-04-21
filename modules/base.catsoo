@@ -1,0 +1,151 @@
+// Basic script loaded by the interpreter when it launches, provides important operators as _iter and _apply
+
+"""
+**This function can be applied to any type of element, it takes any type of parameter and return the first one**
+
+@param a the object to be returned
+@param o the expression to evaluate
+@returns parameter a
+
+_Additional notes_
+
+Typically, this method is used to perform an action to an object without creating an operation.
+
+_Example (on UML)_
+
+\_\_ROOT objects()[NamedElement]->_iter(self.name := 'New' + self.name);
+
+In the above example, this function avoids you to create a function that performs the action.
+Here what's happens in this example:
+\_\_ROOT objects()               --> gathers all the objects contained by from \_\_ROOT (including \_\_ROOT)
+...[NamedElement]              --> filters the collection to keep only objects which are 'NamedElement'
+...[...]->_iter(...)           --> iterates on each collection element (on each 'NamedElement')
+self.name := 'New' + self.name --> affects to a collection element name it's own name prefixed by 'New'
+"""
+def _iter(a : Any, o : Any) : Any
+{
+    return a;
+}
+
+"""
+**This function can be applied to any type of element, it takes any type of parameter and return the second one**
+
+@param a the object on which the functon
+@param o the expression to evaluate
+@returns o evaluation
+
+_Additional notes_
+
+Typically, this method is used to perform an action to an object without creating an operation and returning
+a new collection.
+
+_Example_
+
+[1, 2, 3, 4]->_apply(self + 5);
+
+In the above example, this function will return a new collection [6, 7, 8, 9].
+"""
+def _apply(a : Any, o : Any) : Any
+{
+    return o;
+}
+
+"""
+**Generates a collection of integer representing a sequence.**
+
+@param begin is the start bound (cannot be negative).
+@param end is the end bound (cannot be negative or inferior to begin).
+@returns an integer collection
+"""
+def range(begin : Integer, end : Integer) : Collection
+{
+    if (begin < 0 or end < 0) {
+       log('begin or end have to be non negatives');
+       return [];
+    }
+    if (begin > end) {
+       log('begin bound cannot be superior to end');
+       return [];
+    }
+    var i := begin;
+    var res := [];
+    while (i <= end) {
+        res += i;
+	i := i + 1;
+    }
+    return res;
+}
+
+"""
+**Generates a collection of integer representing a sequence from 0.**
+
+@param end is the end bound (cannot be negative).
+@returns an integer collection
+"""
+def range(e : Integer) : Collection
+{
+    return range(0,e);
+}
+
+"""
+**Flattens a collection (one level)**
+
+_e.g._, [[1,2],[3],4] flatten() returns [1, 2, 3, 4].
+
+@param c the collection to flatten.
+@returns the flattened collection.
+"""
+def flatten(c : Collection) : Collection
+{
+   var res := [];
+   c->_iter(res += self);
+   return res;
+}
+
+"""
+**Adds a prefix and/or a postfix to the current name.**
+
+@param o the object that will be renamed.
+@param prefix the prefix that should be added to the name.
+@param postfix the postfix that should be added to the name.
+@returns the modified objects.
+"""
+def rename(o : Object, prefix : String, postfix : String) : Object
+{
+    var newname := o.name;
+    if (prefix <> null) {
+       newname := prefix + newname;
+    }
+    if (postfix <> null) {
+       newname := newname + postfix;
+    }
+    return o{name := newname};
+}
+
+def getOneWidget(o : Object) : DiagramWidget
+{
+    return o relatedVisibleGraphics()![DiagramWidget];
+}
+
+log('');
+log('â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–ˆâ–€â–€â–€â–€â–€â–€â–€â–€â–€â–€â–€â–€â–€â–€â–€â–€â–€â–€â–ˆ');
+log('â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–ˆâ–‘â–’â–’â–’â–’â–’â–’â–’â–“â–’â–’â–“â–’â–’â–’â–’â–’â–’â–’â–‘â–ˆ');
+log('â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–ˆâ–‘â–’â–’â–“â–’â–’â–’â–’â–’â–’â–’â–’â–’â–„â–„â–’â–“â–’â–’â–‘â–ˆâ–‘â–„â–„');
+log('â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–„â–€â–€â–„â–„â–ˆâ–‘â–’â–’â–’â–’â–’â–’â–“â–’â–’â–’â–’â–ˆâ–‘â–‘â–€â–„â–„â–„â–„â–„â–€â–‘â–‘â–ˆ');
+log('â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–ˆâ–‘â–‘â–‘â–‘â–ˆâ–‘â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–ˆâ–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–ˆ');
+log('â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–€â–€â–„â–„â–ˆâ–‘â–’â–’â–’â–’â–“â–’â–’â–’â–“â–’â–ˆâ–‘â–‘â–‘â–ˆâ–’â–‘â–‘â–‘â–‘â–ˆâ–’â–‘â–‘â–ˆ');
+log('â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–ˆâ–‘â–’â–“â–’â–’â–’â–’â–“â–’â–’â–’â–ˆâ–‘â–‘â–‘â–‘â–‘â–‘â–‘â–€â–‘â–‘â–‘â–‘â–‘â–ˆ');
+log('â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–„â–„â–ˆâ–‘â–’â–’â–’â–“â–’â–’â–’â–’â–’â–’â–’â–ˆâ–‘â–‘â–ˆâ–„â–„â–ˆâ–„â–„â–ˆâ–‘â–‘â–ˆ');
+log('â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–ˆâ–‘â–‘â–‘â–ˆâ–„â–„â–„â–„â–„â–„â–„â–„â–„â–„â–ˆâ–‘â–ˆâ–„â–„â–„â–„â–„â–„â–„â–„â–„â–ˆ');
+log('â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–’â–ˆâ–„â–„â–ˆâ–‘â–‘â–ˆâ–„â–„â–ˆâ–‘â–‘â–‘â–‘â–‘â–‘â–ˆâ–„â–„â–ˆâ–‘â–‘â–ˆâ–„â–„');
+log('');
+log('[WARNING]');
+log('');
+log('* This console is recommended for advanced users. It allows you to manipulate/modify low level features of your model. Use the safe-mode to test commands without saving the changes in your model.');
+log('* Type "#sandbox-on" to activate the safe mode.');
+log('* To go back into real-time/save mode, type "#sandbox-off" (When exiting the safe mode, the modifications performed in your model will be cancelled and your model re-opened) :)');
+log('');
+log('* Information about CatsooLang can be found by clicking on the little (i) at the top right of this frame');
+log('  or by going to this adress: https://gist.github.com/aranega/be085634d8f8ae62f0eb');
+log('* To see shortcuts and part of help, type "help" or press "CTRL-SHIFT-h"');
+log('');

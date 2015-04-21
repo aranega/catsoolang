@@ -1,0 +1,459 @@
+#load_metamodel ecore('http://www.eclipse.org/emf/2002/Ecore')
+
+def _gmmf_cSegment(src : NodeWidget, dest : NodeWidget, segtype : EClassifier, seg : Object, srcE : Object, destE : Object) : SegmentWidget
+{
+    var root := currentPlane();
+
+    var adest := create AnchorWidget{attachedElement := dest; modelElement := srcE};
+    root.ownedDiagramElements += adest;
+    var asrc := create AnchorWidget;
+    root.ownedDiagramElements += asrc{attachedElement := src; modelElement := destE};
+
+    var seg := create segtype{sourceConnector := asrc; targetConnector := adest; modelElement := seg};
+    root.ownedDiagramElements += seg;
+    return seg;
+}
+
+//
+// UML "Library" management (facade)
+//
+var __libs := __ROOT::gmmlibs <> null ? __ROOT::gmmlibs : __ROOT;
+
+"""
+**Creates a new UML library, to add type to it, use '_uml_cLibType' function**
+
+@param name the name of the library.
+@returns the library object (a 'Package').
+
+Once the library is created, you can access it using '\_\_lib::_libname_'
+"""
+def _uml_cLibrary(name : String) : Package
+{
+    if (__libs = null) {
+        __libs := __ROOT;
+    }
+    if (__libs = __ROOT) {
+       if (__ROOT::gmmlibs <> null) {
+          __libs := __ROOT::gmmlibs;
+        } else {
+          __libs := create Package{name := 'gmmlibs'};
+          __ROOT.packagedElement += __libs;
+        }
+    }
+
+    if (__libs.packagedElement->select(e | e.name = name) <> [])
+    {
+        return __libs.packagedElement->select(e | e.name = name)![Package];
+    }
+
+    var clib := create Package{name := name};
+    __libs.packagedElement += clib;
+    return clib;
+}
+
+"""
+**Creates a new UML type and adds it into an existing library**
+
+@param lib the library where the new type will be added.
+@param tnam the new type name.
+@param eclass the type meta-type (_e.g._, DataType or Interface).
+@returns the created type.
+"""
+def _uml_cLibType(lib : Package, tname : String, eclass : ENamedElement) : Object
+{
+    if (lib = null) {
+        log('Library cannot be null');
+        return;
+    }
+
+    var type :=  lib allSubObjects()[NamedElement]->select(e | e.name = tname);
+    if (type = []) {
+      type := create eclass{name := tname};
+      lib.packagedElement += type;
+    } else {
+      type := type at(0);
+    }
+
+    return type;
+}
+
+"""
+**Creates a new UML type as a DataType**
+
+@param lib  the ibrary where the new type will be added.
+@param tnam the new type name.
+@returns the new created DataType.
+"""
+def _uml_cLibType(lib : Package, tname : String) : DataType
+{
+    return _uml_cLibType(lib, tname, DataType);
+}
+
+def _uml_cAssociation(src : Type, dest : Type, aggreg : AggregationKind) : Association
+{
+    if (src = null or dest = null) {
+       log('Src or dest cannot be null');
+       return null;
+    }
+    var psrc := create Property{name := src.name first2low(); type := src} _uml_withPProps('U');
+    var pdest := create Property{name := dest.name first2low(); type := dest; aggregation := aggreg} _uml_withPProps('U');
+    var assoc := create Association
+    	      	 	{
+			    name := src.name + '_' + dest.name;
+			    navigableOwnedEnd += psrc;
+			    navigableOwnedEnd += pdest;
+			};
+    __ROOT.packagedElement += assoc;
+    _gmmf_cSegment(src getOneWidget(), dest getOneWidget(), AssociationSegment, assoc, pdest, psrc);
+    return assoc;
+}
+
+def _uml_cComposite(src : Type, dest : Type) : Association
+{
+    return _uml_cAssociation(src, dest, AggregationKind::composite);
+}
+
+def _uml_cAssociation(src : Type, dest : Type) : Association
+{
+    return _uml_cAssociation(src, dest, null);
+}
+
+def _uml_implements(src : Class, dest : Interface) : Class
+{
+    if (src = null or dest = null) {
+       log('Src or dest cannot be null');
+       return null;
+    }
+
+    var realiz := create InterfaceRealization{client += src; contract := dest; supplier += dest};
+    src.interfaceRealization += realiz;
+     _gmmf_cSegment(src getOneWidget(), dest getOneWidget(), InterfaceRealizationSegment, realiz, realiz, realiz);
+    return src;
+}
+
+"""
+** TODO **
+
+"""
+def _uml_cPackage(name : String, x : Integer, y : Integer) : Package
+{
+    var p := create Package{name := name};
+    __ROOT.packagedElement += p;
+    currentPlane().ownedDiagramElements += create PackageWidget{modelElement := p; x :=x; y := y};
+    return p;
+}
+
+"""
+**Creates and adds a UML operation to an element (in the model and in the graphical model)**
+
+@param parent the element that will own the new UML operation.
+@param name the UML operation name.
+@returns the created UML operation.
+
+_NOTE_:
+This function will add an operation widget to all the parent's widget contained in every diagrams.
+"""
+def _uml_cOperation(parent : Object, name : String) : Object
+{
+    if (parent = null) {
+       log('Parent cannot be null');
+       return null;
+    }
+    var op := create Operation{name := name};
+    parent{ownedOperation += op} relatedGraphics()->_iter(self.ownedDiagramElements += create OperationWidget{modelElement := op});
+    return op;
+}
+
+"""
+**Adds a return type to an existing UML operation**
+
+@param parent the UML operation which will own the parameter.
+@param type the type parameter (_e.g._, umllib::String, to see existing basic types, use 'tree(umllib);' or 'tree(gmmlib);').
+@param lower the lower bound.
+@param upper the upper bound.
+@returns the UML operation ('parent' parameter).
+"""
+def _uml_withReturnType(parent : Operation, type : Object, lower : Integer, upper : Integer) : Operation
+{
+    if (parent = null) {
+       log('Parent cannot be null');
+       return null;
+    }
+    return parent.ownedParameter +=
+    	   create Parameter {
+	   	    name := 'returnParameter';
+		    type := type;
+		    direction := ParameterDirectionKind::_return;
+		    lower := lower;
+		    upper := upper
+		  };
+}
+
+"""
+**Adds a void return type to an existing UML operation**
+
+@param parent the UML operation which will own the void parameter.
+@returns the UML operation ('parent' parameter).
+"""
+def _uml_returnsVoid(parent : Operation) : Operation
+{
+    if (parent = null) {
+       log('Parent cannot be null');
+       return null;
+    }
+    return parent.ownedParameter += create Parameter{name := 'returnParameter'; direction := ParameterDirectionKind::_return};
+}
+
+"""
+**Adds a new 'in' parameter to an existing UML operation**
+
+@param parent the UML operation which will own the parameter.
+@param name the parameter name.
+@param type the parameter type (_e.g._, umllib::String, to see existing basic types, use 'tree(umllib);' or 'tree(gmmlib);').
+@param lower the lower bound.
+@param upper the upper bound.
+@returns the UML operation ('parent' parameter).
+"""
+def _uml_addParameter(parent : Operation, name : String, type : Object, lower : Integer, upper : Integer) : Operation
+{
+    if (parent = null) {
+       log('Parent cannot be null');
+       return null;
+    }
+    return parent.ownedParameter += create Parameter{name := name; type := type; direction := ParameterDirectionKind::in; lower := lower;  upper := upper};
+}
+
+
+"""
+**Assigns properties to a UML Property**
+
+@param p the property to modify.
+@param props the property list to set (see note below).
+@returns the property.
+
+_NOTE_
+props String uses first char of each Property property that
+should be set:
+U for 'Unique'
+R for 'ReadOnly'
+D for 'Derived'
+S for 'Static'
+O for 'Ordered'
+L for 'Leaf'
+
+for example, props 'USO' means, the property:
+  will be: Unique, Static, Leaf
+  and will not be: Ordered, Derived, ReadOnly
+"""
+def _uml_withPProps(p : Property, props : String) : Property
+{
+    if (props = null or props trim() = '') {
+       return p;
+    }
+    var plist := props split('\.*')->reject(e | e = '');
+    return p {
+	    isUnique := plist contains('U');
+ 	    isReadOnly := plist contains('R');
+	    isDerived := plist contains('D');
+	    isStatic := plist contains('S');
+	    isOrdered := plist contains('O');
+	    isLeaf := plist contains('L');
+	};
+}
+
+"""
+**Adds an attribute to an existing classifier**
+
+@param parent the parent (UML classifier) which will own the Attribute.
+@param name the attribute name.
+@returns the created Attribute (a Property in UML)
+"""
+def _uml_cAttribute(parent : Classifier, name : String, type : Object, props : String) : Property
+{
+    if (parent = null) {
+        log('Attribute owner ("parent") cannot be null');
+	return null;
+    }
+    var prop := create Property{name := name; type := type} _uml_withPProps(props);
+    parent{ownedAttribute += prop} relatedGraphics()->_iter(self.ownedDiagramElements += create PropertyWidget{modelElement := prop});
+    return prop;
+}
+
+"""
+**Adds an inheritance relation between two existing classifiers**
+
+@param src the sub-classifier object.
+@param dest the super-classifier object.
+@returns the sub-classifier object ("src" parameter).
+"""
+def _uml_inherits(src : Classifier, dest : Classifier) : Classifier
+{
+    if (src = dest or (not src isKindOf(dest))) {
+       log('Src and dest classifier have not compatible types to support inheritance');
+       return null;
+    }
+    var gen := create Generalization{general := dest};
+    src.generalization += gen;
+    var root := currentPlane();
+
+    if (src relatedVisibleGraphics() = [] or dest relatedVisibleGraphics() = []) {
+       return src;
+    }
+
+    for (ws : src relatedVisibleGraphics()[ClassifierWidget]) {
+    	for (wd : dest relatedVisibleGraphics()[ClassifierWidget]) {
+            var srcAnch := create AnchorWidget{modelElement := gen};
+            var destAnch := create AnchorWidget{modelElement := gen};
+            root.ownedDiagramElements += [srcAnch, destAnch];
+            ws.anchors += srcAnch;
+            wd.anchors += destAnch;
+            root.ownedDiagramElements += create GeneralizationSegment{sourceConnector := srcAnch; targetConnector := destAnch; modelElement := gen};
+        }
+    }
+
+    return src;
+}
+
+
+
+"""
+**Creates a classifier and adds it in the current diagram at (x,y) position**
+
+@param parent the parent where the object must be added.
+@param eclass the classifier type to instantiate.
+@param widget the classifier widget type to instantiate.
+@param name the class name.
+@param x the x position in the current diagram.
+@param y the y position in the current diagram.
+@returns the create class object.
+"""
+def _uml_cClassifier(parent : Object, eclass : EClass, widget : EClass, name : String, x : Integer, y : Integer) : Class
+{
+    if (parent = null) {
+       log('Parent cannot be null');
+       return null;
+    }
+    var c := create eclass{name := name};
+    var cwidget := create widget{modelElement := c};
+    if (parent isKindOf(Package)) {
+        parent.packagedElement += c;
+    } else {
+      if (parent isKindOf(Classifier)) {
+          parent.nestedClassifier += c;
+      }
+    }
+
+    var grel := (parent relatedVisibleGraphics() <> []) ? (parent relatedVisibleGraphics()) : (__ROOT relatedVisibleGraphics());
+    for (w : grel) {
+        if (w isKindOf(Plane)) {
+           cwidget{x := x; y := y};
+           w.ownedDiagramElements += cwidget;
+        } else {
+          var root := currentPlane();
+          if (w isKindOf(PackageWidget)) {
+             cwidget{x := w.x + x; y := w.y + y + 30; refElement := w; constraintPosition := ConstraintPosition::CONTAINED_POSITION};
+          } else {
+            if (w isKindOf(ClassifierWidget)) {
+                cwidget{x := x; y := x};
+                var src := create AnchorWidget{modelElement := parent};
+                var dest := create AnchorWidget{modelElement := c};
+                root.ownedDiagramElements += [src, dest];
+                cwidget.anchors += dest;
+                w.anchors += src;
+                root.ownedDiagramElements += create InnerElementSegment{sourceConnector := src; targetConnector := dest;};
+            }
+          }
+          root.ownedDiagramElements += cwidget;
+        }
+    }
+
+    return c;
+}
+
+"""
+**Creates a class and adds it in the current diagram at (10,10) position**
+
+@param parent the parent where the object must be added.
+@param name the class name.
+@returns the create class object.
+"""
+def _uml_cClass(parent : Object, name : String, x : Integer, y : Integer) : Class
+{
+    return parent _uml_cClassifier(Class, ClassWidget, name,  x, y);
+}
+
+
+"""
+**Creates a class and adds it in the current diagram at (10,10) position**
+
+@param parent the parent where the object must be added.
+@param name the class name.
+@returns the create class object.
+"""
+def _uml_cClass(parent : Object, name : String) : Class
+{
+    return parent _uml_cClass(name, 10, 10);
+}
+
+
+"""
+**Creates an Interface and adds it in the current diagram at (10,10) position**
+
+@param parent the parent where the object must be added.
+@param name the interface name.
+@returns the create interface object.
+"""
+def _uml_cInterface(parent : Object, name : String, x : Integer, y : Integer) : Class
+{
+    return parent _uml_cClassifier(Interface, InterfaceWidget, name,  x, y);
+}
+
+
+"""
+**Creates an Interface and adds it in the current diagram at (10,10) position**
+
+@param parent the parent where the object must be added.
+@param name the interface name.
+@returns the create interface object.
+"""
+def _uml_cInterface(parent : Object, name : String) : Class
+{
+    return parent _uml_cInterface(name, 10, 10);
+}
+
+def _uml_cPackages(root : Package, name : String) : Package
+{
+    return _uml_cPackages(root, name split('::'));
+}
+
+def _uml_cPackages(root : Package, names : Collection) : Package
+{
+    if (names = []) {
+      return null;
+    }
+
+    var n := names at(0);
+    var p := root.packagedElement[Package]->select(e | e.name = n);
+    if (p = []) {
+      p := create Package{name := n};
+      root.packagedElement += p;
+    } else {
+      p := p at(0);
+    }
+
+    if (names size() = 1) {
+      return p;
+    } else {
+      return _uml_cPackages(p, names removeAt(0));
+    }
+}
+
+def putInPackage(o : PackageableElement, p : Package) : PackageableElement
+{
+  if (p = null) {
+    log('Destination package cannot be null');
+    return;
+  }
+  p.packagedElement += o;
+  return o;
+}

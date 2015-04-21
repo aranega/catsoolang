@@ -1,0 +1,57 @@
+// First you need to import the UML module
+assert __libs <> null, 'UML Library is missing, import it first (or re-import it)';
+
+def _logwrap(o : Object, s : String)
+{
+    log(s);
+}
+
+def metrics()
+{
+    var elems := model objects();
+    var nbclasses := elems[Class] size();
+    log('#Class = ' +  nbclasses);
+    log('  * abstract  = ' +  elems[Class]->select(e | e.isAbstract) size());
+    log('  * concrete  = ' +  elems[Class]->select(e | not e.isAbstract) size());
+    log('');
+
+    var nbinter := elems[Interface] size();
+    log('#Interface = ' + nbinter);
+    log('');
+
+    var notcontained := elems[Classifier]->select(e | __ROOT.packagedElement contains(e));
+    log('#Class/Interface not contained in Package = ' + notcontained  size());
+    notcontained->_logwrap(' * ' + self.qualifiedName);
+    log('');
+
+    var nonmatch := elems[Class]->select(e | not e.name matches('.*Entity'));
+    log('#Class that do not end with "Entity" = ' + nonmatch  size());
+    nonmatch->_logwrap(' * ' + self.qualifiedName);
+    log('');
+
+    var badprop := elems[Property]->select(e | e.type = null);
+    log('#Property w/out type = ' + badprop size());
+    badprop->_logwrap(' * ' + self.qualifiedName);
+
+    log('');
+    log('Misplaced elements       = ' + ((notcontained size() / (nbinter + nbclasses) toReal()) * 100.0) + '%');
+    log('Bad class name           = ' + ((nonmatch size() / nbclasses toReal()) * 100.0) + '%');
+    log('Property w/ missing type = ' + ((badprop size() / elems[Property] size() toReal()) * 100.0) + '%');
+}
+
+def _uml_cPackage(name : String, x : Integer, y : Integer) : Package
+{
+    var p := create Package{name := name};
+    __ROOT.packagedElement += p;
+    __ROOT relatedVisibleGraphics()![Plane].ownedDiagramElements += create PackageWidget{modelElement := p; x :=x; y := y};
+    return p;
+}
+
+def init_wspace(bname : String) : Collection
+{
+    var res := [];
+    res += _uml_cPackage(bname + '.entity', 100, 100) _uml_cClass('EntityClass') _uml_cAttribute('ID', umllib::Integer, 'U');
+    res += _uml_cPackage(bname + '.view', 300, 100) _uml_cClass('EntityView');
+    res += _uml_cPackage(bname + '.presenter', 100, 300) _uml_cClass('EntityPresenter');
+    return res;
+}
