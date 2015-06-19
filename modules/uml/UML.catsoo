@@ -201,7 +201,7 @@ def _uml_returnsVoid(parent : Operation) : Operation
        log('Parent cannot be null');
        return null;
     }
-    return parent.ownedParameter += create Parameter{name := 'returnParameter'; direction := ParameterDirectionKind::_return};
+    return parent{ownedParameter += create Parameter{name := 'returnParameter'; direction := ParameterDirectionKind::_return}};
 }
 
 """
@@ -220,7 +220,7 @@ def _uml_addParameter(parent : Operation, name : String, type : Object, lower : 
        log('Parent cannot be null');
        return null;
     }
-    return parent.ownedParameter += create Parameter{name := name; type := type; direction := ParameterDirectionKind::in; lower := lower;  upper := upper};
+    return parent{ownedParameter += create Parameter{name := name; type := type; direction := ParameterDirectionKind::in; lower := lower;  upper := upper}};
 }
 
 
