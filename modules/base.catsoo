@@ -125,6 +125,22 @@ def getOneWidget(o : Object) : DiagramWidget
     return o relatedVisibleGraphics()![DiagramWidget];
 }
 
+def insertionSort(array : Collection) : Collection
+{
+  if (array size() = 0) {
+    return [];
+  }
+  var result := [array at(0)];
+  for (elem : array removeAt(0)) {
+    var index := 0;
+    while (index < result size() and elem > result at(index)) {
+      index := index + 1;
+    }
+    result := result insertAt(elem, index);
+  }
+  return result;
+}
+
 log('');
 log('▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█');
 log('▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█░▒▒▒▒▒▒▒▓▒▒▓▒▒▒▒▒▒▒░█');
@@ -140,7 +156,7 @@ log('');
 log('[WARNING]');
 log('');
 log('* This console is recommended for advanced users. It allows you to manipulate/modify low level features of your model. Use the safe-mode to test commands without saving the changes in your model.');
-log('* Type "#sandbox-on" to activate the safe mode.'); 
+log('* Type "#sandbox-on" to activate the safe mode.');
 log('* To go back into real-time/save mode, type "#sandbox-off" (When exiting the safe mode, the modifications performed in your model will be cancelled and your model re-opened) :)');
 log('');
 log('* Information about CatsooLang can be found by clicking on the little (i) at the top right of this frame');
