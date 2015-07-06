@@ -460,7 +460,7 @@ def putInPackage(o : PackageableElement, p : Package) : PackageableElement
 
 def orderPackageContentByName(p : Package) : Package
 {
-  var neworder := p.packagedElement.name insertionSort();
+  var neworder := p.packagedElement.qualifiedName insertionSort();
   for (i : range(neworder size() - 1)) {
     p.packagedElement[neworder at(i) resolve(), i];
   }
