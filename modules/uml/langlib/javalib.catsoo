@@ -1,0 +1,86 @@
+assert __libs <> null, 'UML Library is missing, import it first (or re-import it)';
+
+log('Java Library creation... Started');
+_uml_cLibrary('java');
+
+// java.lang.* library
+
+var jlang := __libs::java _uml_cPackages('java::lang');
+[
+  'System',
+  'Exception',
+  'Object',
+  'Class',
+  'Thread',
+  'Process',
+  'ProcessBuilder',
+  'ThreadLocal'
+]->_iter(jlang _uml_cLibType(self, uml::Class));
+
+[
+  'Cloneable',
+  'Comparable',
+  'Iterable',
+  'Runnable'
+]->_iter(jlang _uml_cLibType(self, uml::Interface));
+
+log('* java.lang created');
+
+// java.util.* library
+
+var jutil := __libs::java _uml_cPackages('java::util');
+[
+  'ArrayList',
+  'HashMap',
+  'LinkedList',
+  'Stack',
+  'TreeSet',
+  'HashSet'
+]->_iter(jutil _uml_cLibType(self, uml::Class));
+
+[
+  'List',
+  'Set',
+  'Collection',
+  'Iterator',
+  'Comparator',
+  'Observer'
+]->_iter(jutil _uml_cLibType(self, uml::Interface));
+
+log('* java.util created');
+
+// java.io.* library
+
+var jio := __libs::java _uml_cPackages('java::io');
+[
+  'File',
+  'FileInputStream',
+  'FileOutputStream',
+  'FileReader',
+  'FileWriter',
+  'InputStream',
+  'InputStreamReader',
+  'OutputStream',
+  'OutputStreamReader',
+  'PrintStream'
+]->_iter(jio _uml_cLibType(self, uml::Class));
+
+[
+  'Serializable'
+]->_iter(jio _uml_cLibType(self, uml::Interface));
+
+log('* java.io created');
+
+[
+  'int',
+  'float',
+  'double',
+  'char',
+  'byte',
+  'short',
+  'long',
+  'boolean'
+]->_iter(__libs::java _uml_cLibType(self, PrimitiveType));
+
+log('* java primitive type created');
+log('Java Library creation... Done!');
